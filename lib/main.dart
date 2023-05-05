@@ -9,28 +9,34 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'firebase_options.dart';
+import 'injection_container.dart' as di;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  // ).then(
-  //   (value) => AuthRepository(),
-  // );
+
+  await di.init();
   AuthRepository authRepository = AuthRepository();
   runApp(RepositoryProvider(
-      create: (context) => AuthRepository(),
-      child: MultiBlocProvider(
-        providers: [
-          BlocProvider(
-              create: (context) => AuthBloc(authRepository)..add(AppStarted())),
-          BlocProvider(
-            create: (context) => LoginBloc(authRepository: authRepository),
-          ),
-        ],
-        child: AuthApp(authRepository: authRepository),
-      )));
+    create: (context) => AuthRepository(),
+    child: BlocOverrides.runZoned(
+        () => MultiBlocProvider(
+              providers: [
+                BlocProvider(
+                    create: (context) =>
+                        AuthBloc(authRepository: authRepository)
+                          ..add(AppStarted())),
+                BlocProvider(
+                  create: (context) =>
+                      LoginBloc(authRepository: authRepository),
+                ),
+              ],
+              child: AuthApp(authRepository: authRepository),
+            ),
+        blocObserver: AppBlocObserver()),
+  ));
 }
 
 class AuthApp extends StatefulWidget {

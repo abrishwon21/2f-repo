@@ -7,6 +7,7 @@ import 'package:authapp/data/repositories/repositories.dart';
 import 'package:bloc/bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import './bloc.dart';
 
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
@@ -20,6 +21,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         _authRepository = authRepository,
         super(InitialLoginState()) {
     on<EmailSignUpRequested>((event, emit) async {
+      SharedPreferences _pref = await SharedPreferences.getInstance();
       emit(LoadingState());
       bool res = await _authRepository.signUp(
           firstName: event.firstName,
@@ -28,19 +30,23 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           password: event.password);
 
       User u = await _authRepository.getUser();
+
       if (res) {
+        _pref.setString("uid", u.uid);
         emit(LoginCompleteState(u));
       } else {
-        emit(LoadingFailed());
+        emit(LogInFailed());
       }
     });
 
     on<EmailSignInRequested>((event, emit) async {
       emit(LoadingState());
+      SharedPreferences _pref = await SharedPreferences.getInstance();
       EmailSignInRequested(event.email, event.password);
       await _authRepository.SignIn(
           email: event.email, password: event.password);
       User u = await _authRepository.getUser();
+      _pref.setString("uid", u.uid);
       emit(LoginCompleteState(u));
     });
     on<SendOtpEvent>(

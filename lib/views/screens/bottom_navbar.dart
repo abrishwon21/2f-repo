@@ -15,13 +15,10 @@ class BottomNavBarScreen extends StatefulWidget {
 class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   List _screens = [
     HomeScreen(),
+    SecondScreen(),
     Container(
         child: Center(
-      child: Text("second screen"),
-    )),
-    Container(
-        child: Center(
-      child: Text("second screen"),
+      child: Text("third screen"),
     )),
     SettingScreen(),
   ];

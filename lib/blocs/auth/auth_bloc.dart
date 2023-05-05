@@ -1,56 +1,21 @@
 import 'package:authapp/data/repositories/repositories.dart';
 import 'package:bloc/bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'bloc_event.dart';
 import 'bloc_state.dart';
 
-// class AuthBloc extends Bloc<AuthEvent, AuthState> {
-// final AuthRepository authRepository;
-// AuthBloc({required this.authRepository}) : super(UnAuthenticated()) {
-//   on<EmailSignUpRequested>((event, state) async {
-//     //TO DO: emit loading state
-//     emit(LoadingState());
-//     //TO DO: signup logic in try catch
-//     try {
-//       authRepository.signUp(
-//           firstName: event.firstName,
-//           lastName: event.lastName,
-//           email: event.email,
-//           password: event.password);
-
-//       emit(Authenticated());
-//     } catch (e) {
-//       emit(UnAuthenticated());
-//     }
-//   });
-
-//   //signin
-//   on<EmailSignInRequested>((event, state) async {
-//     //TO DO: emit loading state
-//     emit(LoadingState());
-//     //TO DO: signup logic in try catch
-//     try {
-//       authRepository.SignIn(email: event.email, password: event.password);
-
-//       emit(Authenticated());
-//     } catch (e) {
-//       emit(UnAuthenticated());
-//     }
-//   });
-//   on<PhoneSignAuthRequested>((event, state) async {
-//     //To Do: phone sign in
-//   });
-// }
-// }
-
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  final AuthRepository userRepository;
+  late AuthRepository _authRepository;
 
-  AuthBloc(this.userRepository) : super(InitialAuthState()) {
+  AuthBloc({authRepository}) : super(InitialAuthState()) {
+    _authRepository = authRepository;
     on<AppStarted>((event, emit) async {
-      final bool hasToken = await userRepository.getUser() != null;
+      final bool hasToken = await _authRepository.getUser() != null;
+      SharedPreferences _pref = await SharedPreferences.getInstance();
+      bool _isLoggedin = await _pref.getString("uid") != null;
 
-      if (hasToken) {
+      if (hasToken || _isLoggedin) {
         emit(Authenticated());
       } else {
         emit(Unauthenticated());
@@ -59,6 +24,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     on<LoggedIn>((event, emit) async {
       emit(Loading());
+
       emit(Authenticated());
     });
 

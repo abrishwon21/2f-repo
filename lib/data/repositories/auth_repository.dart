@@ -48,6 +48,7 @@ class AuthRepository {
           .then((value) => value.user);
 
       u!.updateDisplayName(firstName + "\t" + lastName);
+      
       if (u != null) {
         return true;
       }

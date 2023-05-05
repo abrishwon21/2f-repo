@@ -1,4 +1,6 @@
 import 'package:authapp/blocs/auth/bloc_event.dart';
+import 'package:authapp/blocs/auth/bloc_state.dart';
+import 'package:authapp/blocs/auth/bloc_state.dart';
 import 'package:authapp/blocs/blocs.dart';
 import 'package:authapp/blocs/login/event.dart';
 import 'package:authapp/blocs/login/state.dart';
@@ -37,8 +39,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
       BlocBuilder<LoginBloc, LoginState>(builder: (context, state) {
         if (state is LoginCompleteState) {
-          Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => BottomNavBarScreen()));
+          context.read<LoginBloc>().add(LoginCompleteEvent as LoginEvent);
         }
         return Center(
           child: CircularProgressIndicator(),
@@ -59,8 +60,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
       BlocBuilder<LoginBloc, LoginState>(builder: (context, state) {
         if (state is LoginCompleteState) {
-          Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => BottomNavBarScreen()));
+          context.read<LoginBloc>().add(LoginCompleteEvent as LoginEvent);
         }
         return Center(
           child: CircularProgressIndicator(),
@@ -74,155 +74,177 @@ class _AuthScreenState extends State<AuthScreen> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(title: Text("2F Capital")),
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-                height: 64.0.h,
-                width: 100.0.w,
-                alignment: Alignment.topLeft,
-                margin: EdgeInsets.only(left: 16.0.w, top: 10.0.h),
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  image: DecorationImage(
-                    image: AssetImage("assets/images/gLogo.png"),
-                    fit: BoxFit.fitHeight,
-                  ),
-                )),
-            SizedBox(height: 25.0.h),
-            Center(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.vertical,
-                child: Form(
-                  key: _formKey,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                        vertical: 10.0.h, horizontal: 10.0.w),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _isLogin ? 'Login' : 'Signup',
-                          style: headText(
-                              context, Colors.black, 28.0, FontWeight.w600),
-                        ),
-                        SizedBox(height: 30.0.h),
-                        if (!_isLogin) _buildNameFields(),
-                        SizedBox(
-                          height: 8.0.h,
-                        ),
-                        _buildEmailField(),
-                        SizedBox(
-                          height: 8.0.h,
-                        ),
-                        _buildPasswordField(),
-                        SizedBox(height: 16.0.h),
-                        _isLogin
-                            ? TextButton(
-                                child: Text(
-                                  "Forgot Password",
-                                  style: bodyMedium(context, Colors.black,
-                                      20.0.sp, FontWeight.w400),
-                                ),
-                                onPressed: () {})
-                            : const SizedBox(height: 0.0),
-                        SizedBox(height: _isLogin ? 16.0.h : 0.0),
-                        Container(
-                          // margin: EdgeInsets.symmetric(horizontal: 20.0),
-                          width: double.maxFinite,
-                          height: 50.0.h,
-
-                          child: ElevatedButton(
-                            child: Text(_isLogin ? 'Login' : 'Signup',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 22.0.sp,
-                                  fontWeight: FontWeight.w300,
-                                )),
-                            onPressed: _isLogin ? _signIn : _signUp,
-                            style: ButtonStyle(
-                                backgroundColor:
-                                    MaterialStateProperty.all<Color>(
-                                        MAIN_BUTTON_COLOR)),
+        body: MultiBlocListener(
+          listeners: [
+            BlocListener<AuthBloc, AuthState>(listener: (context, state) {
+              if (state is Authenticated) {
+                Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                        builder: (context) => const BottomNavBarScreen()),
+                    (Route<dynamic> route) => false);
+              }
+            }),
+            BlocListener<LoginBloc, LoginState>(listener: (context, state) {
+              if (state is LoadingState) {
+                Center(
+                  child: CircularProgressIndicator(),
+                );
+              } else if (state is LoginCompleteState) {
+                context.read<AuthBloc>().add(Authenticated as AuthEvent);
+              }
+            }),
+          ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                  height: 64.0.h,
+                  width: 100.0.w,
+                  alignment: Alignment.topLeft,
+                  margin: EdgeInsets.only(left: 16.0.w, top: 10.0.h),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    image: DecorationImage(
+                      image: AssetImage("assets/images/gLogo.png"),
+                      fit: BoxFit.fitHeight,
+                    ),
+                  )),
+              SizedBox(height: 25.0.h),
+              Center(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: Form(
+                    key: _formKey,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                          vertical: 10.0.h, horizontal: 10.0.w),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _isLogin ? 'Login' : 'Signup',
+                            style: headText(
+                                context, Colors.black, 28.0, FontWeight.w600),
                           ),
-                        ),
-                        SizedBox(
-                          height: 10.0.h,
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(left: 12.0.w),
-                          child: Row(
-                            children: [
-                              Text(
-                                  _isLogin
-                                      ? 'Don\'t Have An Account?\t'
-                                      : 'Already Have An Account?\t',
-                                  style: TextStyle(
-                                      color: Colors.black.withOpacity(0.7),
-                                      fontWeight: FontWeight.w200,
-                                      fontSize: 18.0.sp)),
-                              TextButton(
-                                child: Text(
-                                  _isLogin ? 'Register' : 'Sign In',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 18.0.sp,
-                                    fontWeight: FontWeight.w300,
+                          SizedBox(height: 30.0.h),
+                          if (!_isLogin) _buildNameFields(),
+                          SizedBox(
+                            height: 8.0.h,
+                          ),
+                          _buildEmailField(),
+                          SizedBox(
+                            height: 8.0.h,
+                          ),
+                          _buildPasswordField(),
+                          SizedBox(height: 16.0.h),
+                          _isLogin
+                              ? TextButton(
+                                  child: Text(
+                                    "Forgot Password",
+                                    style: bodyMedium(context, Colors.black,
+                                        20.0.sp, FontWeight.w400),
                                   ),
+                                  onPressed: () {})
+                              : const SizedBox(height: 0.0),
+                          SizedBox(height: _isLogin ? 16.0.h : 0.0),
+                          Container(
+                            // margin: EdgeInsets.symmetric(horizontal: 20.0),
+                            width: double.maxFinite,
+                            height: 50.0.h,
+
+                            child: ElevatedButton(
+                              child: Text(_isLogin ? 'Login' : 'Signup',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22.0.sp,
+                                    fontWeight: FontWeight.w300,
+                                  )),
+                              onPressed: _isLogin ? _signIn : _signUp,
+                              style: ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                          MAIN_BUTTON_COLOR)),
+                            ),
+                          ),
+                          SizedBox(
+                            height: 10.0.h,
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(left: 12.0.w),
+                            child: Row(
+                              children: [
+                                Text(
+                                    _isLogin
+                                        ? 'Don\'t Have An Account?\t'
+                                        : 'Already Have An Account?\t',
+                                    style: TextStyle(
+                                        color: Colors.black.withOpacity(0.7),
+                                        fontWeight: FontWeight.w200,
+                                        fontSize: 18.0.sp)),
+                                TextButton(
+                                  child: Text(
+                                    _isLogin ? 'Register' : 'Sign In',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 18.0.sp,
+                                      fontWeight: FontWeight.w300,
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _isLogin = !_isLogin;
+                                    });
+                                  },
                                 ),
-                                onPressed: () {
-                                  setState(() {
-                                    _isLogin = !_isLogin;
-                                  });
-                                },
+                              ],
+                            ),
+                          ),
+                          SizedBox(
+                            height: 10.0.h,
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Divider(
+                                thickness: 2.0.h,
+                                color: Colors.red,
+                                endIndent: 5.0.w,
+                              ),
+                              Text("OR"),
+                              Divider(
+                                thickness: 2.0.h,
+                                color: PRIMARY_GREEN,
                               ),
                             ],
                           ),
-                        ),
-                        SizedBox(
-                          height: 10.0.h,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Divider(
-                              thickness: 2.0.h,
-                              color: Colors.red,
-                              endIndent: 5.0.w,
-                            ),
-                            Text("OR"),
-                            Divider(
-                              thickness: 2.0.h,
-                              color: PRIMARY_GREEN,
-                            ),
-                          ],
-                        ),
-                        SizedBox(
-                          height: 10.0.h,
-                        ),
-                        Center(
-                            child: TextButton(
-                                child: Row(
-                                  children: [
-                                    Text("Sign In By:\t"),
-                                    Icon(Icons.phone_enabled_rounded),
-                                    Text("\t Your Phone"),
-                                  ],
-                                ),
-                                onPressed: () {
-                                  Navigator.of(context).push(MaterialPageRoute(
-                                      builder: (_) => PhoneScreen()));
-                                }))
-                      ],
-                    ),
+                          SizedBox(
+                            height: 10.0.h,
+                          ),
+                          Center(
+                              child: TextButton(
+                                  child: Row(
+                                    children: [
+                                      Text("Sign In By:\t"),
+                                      Icon(Icons.phone_enabled_rounded),
+                                      Text("\t Your Phone"),
+                                    ],
+                                  ),
+                                  onPressed: () {
+                                    Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                            builder: (_) => PhoneScreen()));
+                                  }))
+                        ],
+                      ),
 
-                    //ie
+                      //ie
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
